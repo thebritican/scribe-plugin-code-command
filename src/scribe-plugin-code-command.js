@@ -15,6 +15,12 @@ define(function () {
           // TODO: When this command supports all types of ranges we can abstract
           // it and use it for any command that applies inline styles.
           var selection = new scribe.api.Selection();
+          var containingText = selection.getContaining(scribe.node.isText)
+          if (containingText && containingText.parentElement.tagName === 'CODE') {
+            scribe.node.unwrap(containingText.parentElement.parentElement, containingText.parentElement);
+            return;
+          }
+
           var range = selection.range;
 
           var selectedHtmlDocumentFragment = range.extractContents();
