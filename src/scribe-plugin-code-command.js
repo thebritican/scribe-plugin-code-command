@@ -15,7 +15,7 @@ define(function () {
           // TODO: When this command supports all types of ranges we can abstract
           // it and use it for any command that applies inline styles.
           var selection = new scribe.api.Selection();
-          var containingText = selection.getContaining(scribe.node.isText)
+          var containingText = selection.getContaining(scribe.node.isText);
           if (containingText && containingText.parentElement.tagName === 'CODE') {
             scribe.node.unwrap(containingText.parentElement.parentElement, containingText.parentElement);
             return;
@@ -26,11 +26,16 @@ define(function () {
           var selectedHtmlDocumentFragment = range.extractContents();
 
           var codeElement = document.createElement('code');
-          codeElement.appendChild(selectedHtmlDocumentFragment);
+          var isEmptySelection = selectedHtmlDocumentFragment.textContent === '';
+          if (isEmptySelection) {
+            codeElement.innerHTML = '&#x200b;';
+          } else {
+            codeElement.appendChild(selectedHtmlDocumentFragment);
+          }
 
           range.insertNode(codeElement);
 
-          range.selectNode(codeElement);
+          range.selectNodeContents(codeElement);
 
           // Re-apply the range
           selection.selection.removeAllRanges();
@@ -44,7 +49,7 @@ define(function () {
       // be.
       codeCommand.queryState = function () {
         var selection = new scribe.api.Selection();
-        return !! selection.getContaining(function (node) {
+        return selection.getContaining(function (node) {
           return node.nodeName === this.nodeName;
         }.bind(this));
       };
@@ -54,15 +59,10 @@ define(function () {
       // TODO: Find a way to make it explicit what the sequence of commands will
       // be.
       codeCommand.queryEnabled = function () {
-        var selection = new scribe.api.Selection();
-        var range = selection.range;
-
-        // TODO: Support uncollapsed ranges
-        return ! range.collapsed;
+        return true;
       };
 
       scribe.commands.code = codeCommand;
     };
   };
-
 });
