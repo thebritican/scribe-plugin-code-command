@@ -15,21 +15,44 @@ define(function () {
           // TODO: When this command supports all types of ranges we can abstract
           // it and use it for any command that applies inline styles.
           var selection = new scribe.api.Selection();
+          var range = selection.range;
           var containingText = selection.getContaining(scribe.node.isText);
           if (containingText && containingText.parentElement.tagName === 'CODE') {
-            scribe.node.unwrap(containingText.parentElement.parentElement, containingText.parentElement);
+          // if surrounded by code
+            if (!range.collapsed) {
+              // if it's a selection remove the code it
+              var code = containingText.parentElement;
+              range.setStartBefore(code);
+              range.setEndAfter(code);
+              scribe.node.unwrap(containingText.parentElement.parentElement, containingText.parentElement);
+              selection.selection.removeAllRanges();
+              selection.selection.addRange(range);
+              return;
+            }
+            // otherwise pop out
+            var text = containingText.parentElement.parentElement;
+            text.innerHTML += '&#x200b;';
+            range.selectNode(text);
+            range.collapse(false);
+            selection.selection.removeAllRanges();
+            selection.selection.addRange(range);
             return;
           }
-
-          var range = selection.range;
 
           var selectedHtmlDocumentFragment = range.extractContents();
 
           var codeElement = document.createElement('code');
           var isEmptySelection = selectedHtmlDocumentFragment.textContent === '';
-          if (isEmptySelection) {
+          if (isEmptySelection) { // toggle code
             codeElement.innerHTML = '&#x200b;';
-          } else {
+          } else { // clean out any nested code spans in selection
+            var codeElements = selectedHtmlDocumentFragment.querySelectorAll('code');
+            if (codeElements) {
+              var codeEleArray = Array.from(codeElements);
+              codeEleArray.forEach(function (code) {
+                scribe.node.unwrap(code.parentNode, code);
+              });
+            }
             codeElement.appendChild(selectedHtmlDocumentFragment);
           }
 
