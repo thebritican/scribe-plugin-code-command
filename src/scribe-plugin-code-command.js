@@ -22,7 +22,7 @@ define(function () {
       }
 
       function addCodespan (range) {
-        var selectedHtmlDocumentFragment = range.extractContents();
+        var selectedHtmlDocumentFragment = range.cloneContents();
 
         var codeElement = document.createElement('code');
         var isEmptySelection = selectedHtmlDocumentFragment.textContent === '';
@@ -36,7 +36,19 @@ define(function () {
               scribe.node.unwrap(code.parentNode, code);
             });
           }
-          codeElement.appendChild(selectedHtmlDocumentFragment);
+
+          document.execCommand('strikeThrough');
+          var newRange = window.getSelection().getRangeAt(0);
+          var strikeThroughFragment = newRange.extractContents();
+          var strikeElements = strikeThroughFragment.querySelectorAll('strike');
+          if (strikeElements) {
+            var strikeEleArray = Array.from(strikeElements);
+            strikeEleArray.forEach(function (strike, index) {
+              var parent = strike.parentNode;
+              parent.innerHTML = parent.innerHTML.replace(/\<strike\>(.*)(?=<\/strike>)<\/strike>/g, '<code>$1</code>');
+            });
+          }
+          codeElement = strikeThroughFragment;
         }
 
         range.insertNode(codeElement);
